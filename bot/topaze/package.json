@@ -1,0 +1,16 @@
+{
+  "name": "topaze",
+  "version": "1.0.0",
+  "description": "Bot central de coordination du Studio Saphira",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "register": "node registerCommands.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.10.0",
+    "dayjs": "^1.11.13",
+    "discord.js": "^14.20.0",
+    "dotenv": "^16.5.0"
+  }
+}

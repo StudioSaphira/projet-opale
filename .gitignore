@@ -1,0 +1,31 @@
+# === FICHIERS SENSIBLES ===
+.env
+
+# === MODULES NODE.JS ===
+**/node_modules/
+
+# === BASE DE DONNÉES (SQLite, JSON de config) ===
+shared/database/*.sqlite
+shared/database/*.json
+
+# === SCRIPTS LOCAUX À NE PAS TRACKER ===
+start-all.sh
+
+# === LOGS ET FICHIERS TEMPORAIRES ===
+*.log
+*.lock
+*.tmp
+*.bak
+
+# === CONFIGURATION DES ÉDITEURS ===
+*.swp
+*.swo
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# === PROCESSUS ET CONFIGURATION PM2 ===
+pids/
+pm2.log
+ecosystem.config.js
