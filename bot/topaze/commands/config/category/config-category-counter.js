@@ -1,5 +1,7 @@
-const { SlashCommandBuilder, ChannelType, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, ChannelType } = require('discord.js');
 const db = require('../../../../../shared/utils/db');
+const { createConfigEmbed } = require('../../../../../shared/utils/embed/topaze/embedTopazeConfig');
+const { sendLogConfigToRubis } = require('../../../../../shared/helpers/logger');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -16,6 +18,7 @@ module.exports = {
   async execute(interaction) {
     const guildId = interaction.guild.id;
     const userId = interaction.user.id;
+    const user = interaction.user;
 
     const ownerIds = process.env.OWNER_ID?.split(',') || [];
     const adminIds = process.env.ADMIN_ID?.split(',') || [];
@@ -23,7 +26,6 @@ module.exports = {
     const isOwner = ownerIds.includes(userId);
     const isAdminId = adminIds.includes(userId);
 
-    // Vérifier si l'utilisateur a le rôle admin de la base
     const row = db.prepare('SELECT role_admin_id FROM server_config WHERE guild_id = ?').get(guildId);
     const roleAdminId = row?.role_admin_id;
     const isAdminRole = roleAdminId && interaction.member.roles.cache.has(roleAdminId);
@@ -44,10 +46,17 @@ module.exports = {
         ON CONFLICT(guild_id) DO UPDATE SET category_counter_id = excluded.category_counter_id
       `).run(guildId, selectedCategory.id);
 
-      return interaction.reply({
-        content: `✅ Catégorie des compteurs mise à jour : \`${selectedCategory.name}\` (<#${selectedCategory.id}>)`,
-        flags: 64
-      });
+      const embed = createConfigEmbed('category_counter_id', selectedCategory.id, user);
+      await interaction.reply({ embeds: [embed], flags: 64 });
+
+      await sendLogConfigToRubis(
+        interaction.guild,
+        interaction.user,
+        `La catégorie des compteurs a été mise à jour : <#${selectedCategory.id}> (\`${selectedCategory.id}\``,
+        interaction.client,
+        'Configuration : Compteurs',
+        '📊'
+      );
     } catch (error) {
       console.error('[TOPAZE] Erreur DB – /config-category-counter :', error);
       return interaction.reply({

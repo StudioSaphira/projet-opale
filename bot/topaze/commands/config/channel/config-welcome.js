@@ -1,5 +1,9 @@
+// bot\topaze\commands\config\channel\config-welcome.js
+
 const { SlashCommandBuilder, ChannelType } = require('discord.js');
 const db = require('../../../../../shared/utils/db');
+const { createConfigEmbed } = require('../../../../../shared/utils/embed/topaze/embedTopazeConfig');
+const { sendLogConfigToRubis } = require('../../../../../shared/helpers/logger');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -14,8 +18,12 @@ module.exports = {
     ),
 
   async execute(interaction) {
+
+    console.log(`[Topaze] Commande ${interaction.commandName} reçue par ${interaction.user.tag}`);
+    
     const guildId = interaction.guild.id;
     const userId = interaction.user.id;
+    const user = interaction.user;
 
     const ownerIds = process.env.OWNER_ID?.split(',') || [];
     const adminIds = process.env.ADMIN_ID?.split(',') || [];
@@ -43,10 +51,17 @@ module.exports = {
         ON CONFLICT(guild_id) DO UPDATE SET channel_welcome_id = excluded.channel_welcome_id
       `).run(guildId, channel.id);
 
-      return interaction.reply({
-        content: `🎉 Salon de bienvenue mis à jour : <#${channel.id}> (\`${channel.name}\`)`,
-        flags: 64
-      });
+      const embed = createConfigEmbed('channel_welcome_id', channel.id, user);
+      await interaction.reply({ embeds: [embed], flags: 64 });
+
+      await sendLogConfigToRubis(
+        interaction.guild,
+        interaction.user,
+        `Le salon de bienvenue a été mis à jour : <#${channel.id}> (\`${channel.id}\`)`,
+        interaction.client,
+        'Configuration : Flux',
+        '🎉'
+      );
     } catch (error) {
       console.error('[TOPAZE] Erreur DB – /config-welcome :', error);
       return interaction.reply({

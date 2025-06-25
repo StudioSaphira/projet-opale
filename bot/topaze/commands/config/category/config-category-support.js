@@ -1,9 +1,11 @@
 const { SlashCommandBuilder, ChannelType } = require('discord.js');
 const db = require('../../../../../shared/utils/db');
+const { createConfigEmbed } = require('../../../../../shared/utils/embed/topaze/embedTopazeConfig');
+const { sendLogConfigToRubis } = require('../../../../../shared/helpers/logger');
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('config-category-ticket')
+    .setName('config-category-support')
     .setDescription('Configurer la catégorie utilisée pour les tickets de demande de supports')
     .addChannelOption(option =>
       option
@@ -16,6 +18,7 @@ module.exports = {
   async execute(interaction) {
     const guildId = interaction.guild.id;
     const userId = interaction.user.id;
+    const user = interaction.user;
 
     const ownerIds = process.env.OWNER_ID?.split(',') || [];
     const adminIds = process.env.ADMIN_ID?.split(',') || [];
@@ -38,17 +41,24 @@ module.exports = {
 
     try {
       db.prepare(`
-        INSERT INTO server_config (guild_id, category_ticket_id)
+        INSERT INTO server_config (guild_id, category_support_id)
         VALUES (?, ?)
-        ON CONFLICT(guild_id) DO UPDATE SET category_ticket_id = excluded.category_ticket_id
+        ON CONFLICT(guild_id) DO UPDATE SET category_support_id = excluded.category_support_id
       `).run(guildId, selectedCategory.id);
 
-      return interaction.reply({
-        content: `✅ Catégorie des tickets mise à jour : \`${selectedCategory.name}\` (<#${selectedCategory.id}>)`,
-        flags: 64
-      });
+      const embed = createConfigEmbed('category_support_id', selectedCategory.id, user);
+      await interaction.reply({ embeds: [embed], flags: 64 });
+
+      await sendLogConfigToRubis(
+        interaction.guild,
+        interaction.user,
+        `La catégorie pour les tickets "support" a été mise à jour : <#${selectedCategory.id}> (\`${selectedCategory.id}\`)`,
+        interaction.client,
+        'Configuration : Tickets',
+        '🛠️'
+      );
     } catch (error) {
-      console.error('[TOPAZE] Erreur DB – /config-category-ticket :', error);
+      console.error('[TOPAZE] Erreur DB – /config-category-support :', error);
       return interaction.reply({
         content: '❌ Une erreur est survenue lors de l’enregistrement.',
         flags: 64

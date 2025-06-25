@@ -1,5 +1,7 @@
 const { SlashCommandBuilder, ChannelType } = require('discord.js');
 const db = require('../../../../../shared/utils/db');
+const { createConfigEmbed } = require('../../../../../shared/utils/embed/topaze/embedTopazeConfig');
+const { sendLogConfigToRubis } = require('../../../../../shared/helpers/logger');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -16,6 +18,7 @@ module.exports = {
     const channel = interaction.options.getChannel('salon');
     const guildId = interaction.guild.id;
     const userId = interaction.user.id;
+    const user = interaction.user;
 
     const ownerIds = process.env.OWNER_ID?.split(',') || [];
     const adminIds = process.env.ADMIN_ID?.split(',') || [];
@@ -32,15 +35,30 @@ module.exports = {
       });
     }
 
-    db.prepare(`
-      INSERT INTO server_config (guild_id, channel_counter_allmember_id)
-      VALUES (?, ?)
-      ON CONFLICT(guild_id) DO UPDATE SET channel_counter_allmember_id = excluded.channel_counter_allmember_id
-    `).run(guildId, channel.id);
+    try {
+      db.prepare(`
+        INSERT INTO server_config (guild_id, channel_counter_allmember_id)
+        VALUES (?, ?)
+        ON CONFLICT(guild_id) DO UPDATE SET channel_counter_allmember_id = excluded.channel_counter_allmember_id
+      `).run(guildId, channel.id);
 
-    return interaction.reply({
-      content: `✅ Salon de compteur global mis à jour : ${channel}`,
-      flags: 64
-    });
+      const embed = createConfigEmbed('channel_counter_allmember_id', channel.id, user);
+      await interaction.reply({ embeds: [embed], flags: 64 });
+
+      await sendLogConfigToRubis(
+        interaction.guild,
+        interaction.user,
+        `Le compteur de tous les membres a été mis à jour : <#${channel.id}> (\`${channel.id}\`)`,
+        interaction.client,
+        'Configuration : Compteurs',
+        '👥'
+      );
+    } catch (error) {
+      console.error('[TOPAZE] Erreur DB – /config-counter-all :', error);
+      return interaction.reply({
+        content: '❌ Une erreur est survenue lors de l’enregistrement.',
+        flags: 64
+      });
+    }
   }
 };

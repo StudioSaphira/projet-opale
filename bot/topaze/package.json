@@ -1,6 +1,6 @@
 {
   "name": "topaze",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Bot central de coordination du Studio Saphira",
   "main": "index.js",
   "scripts": {
@@ -11,6 +11,8 @@
     "better-sqlite3": "^11.10.0",
     "dayjs": "^1.11.13",
     "discord.js": "^14.20.0",
-    "dotenv": "^16.5.0"
+    "dotenv": "^16.5.0",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1"
   }
 }

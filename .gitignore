@@ -1,17 +1,18 @@
 # === FICHIERS SENSIBLES ===
 .env
+bot/README.md
 
 # === MODULES NODE.JS ===
 **/node_modules/
 
-# === BASE DE DONNÉES (SQLite, JSON de config) ===
-shared/database/*.sqlite
-shared/database/*.json
+# === BASE DE DONNÉES ===
+shared/database/
 
 # === SCRIPTS LOCAUX À NE PAS TRACKER ===
 start-all.sh
 
 # === LOGS ET FICHIERS TEMPORAIRES ===
+logs/
 *.log
 *.lock
 *.tmp
@@ -22,6 +23,7 @@ start-all.sh
 *.swo
 .idea/
 .vscode/
+.vs/
 .DS_Store
 Thumbs.db
 

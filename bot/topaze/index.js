@@ -1,10 +1,9 @@
 require('../../shared/database/utils/setupDatabase.js');
 require('dotenv').config({ path: '../../.env' });
 
-const { Client, GatewayIntentBits, Collection, Partials, InteractionType, MessageFlags } = require('discord.js');
+const { Client, GatewayIntentBits, Collection, Partials, InteractionType } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
-const handleInteraction = require('./handlers/interactionHandler');
 
 // === Initialisation du client Discord ===
 const client = new Client({
@@ -16,27 +15,42 @@ const client = new Client({
   partials: [Partials.Channel]
 });
 
-// === Chargement des commandes ===
+// === Chargement récursif des commandes ===
 client.commands = new Collection();
-const commandsPath = path.join(__dirname, 'commands');
-fs.readdirSync(commandsPath).filter(file => file.endsWith('.js')).forEach(file => {
-  const command = require(path.join(commandsPath, file));
-  if (command.data && command.execute) {
-    client.commands.set(command.data.name, command);
+
+function loadCommandsRecursively(dir) {
+  const files = fs.readdirSync(dir);
+  for (const file of files) {
+    const fullPath = path.join(dir, file);
+    if (fs.statSync(fullPath).isDirectory()) {
+      loadCommandsRecursively(fullPath);
+    } else if (file.endsWith('.js')) {
+      const command = require(fullPath);
+      if (command.data && command.execute) {
+        client.commands.set(command.data.name, command);
+      }
+    }
   }
-});
+}
 
-// === Gestion des interactions ===
+loadCommandsRecursively(path.join(__dirname, 'commands'));
+
+// === Gestion directe des interactions ===
 client.on('interactionCreate', async interaction => {
-  try {
-    await handleInteraction(interaction, client);
-  } catch (err) {
-    console.error('[Topaze] Erreur interaction :', err);
+  if (interaction.type !== InteractionType.ApplicationCommand) return;
 
-    if (interaction.type === InteractionType.ApplicationCommand && !interaction.replied) {
+  const command = client.commands.get(interaction.commandName);
+  if (!command) return;
+
+  try {
+    await command.execute(interaction, client);
+  } catch (err) {
+    console.error(`[Topaze] Erreur dans la commande /${interaction.commandName} :`, err);
+
+    if (!interaction.replied) {
       await interaction.reply({
         content: '❌ Une erreur est survenue lors de l’exécution de la commande.',
-        flags: MessageFlags.Ephemeral
+        flags: 64
       });
     }
   }

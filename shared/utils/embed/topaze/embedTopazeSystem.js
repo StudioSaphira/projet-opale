@@ -1,4 +1,3 @@
-// utils/embed/embedTopazeSystem.js
 const { EmbedBuilder } = require('discord.js');
 
 function createStartEmbed(user, botName) {

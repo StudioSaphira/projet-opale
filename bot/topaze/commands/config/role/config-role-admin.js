@@ -1,5 +1,7 @@
 const { SlashCommandBuilder } = require('discord.js');
 const db = require('../../../../../shared/utils/db');
+const { createConfigEmbed } = require('../../../../../shared/utils/embed/topaze/embedTopazeConfig');
+const { sendLogConfigToRubis } = require('../../../../../shared/helpers/logger');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -13,32 +15,36 @@ module.exports = {
     ),
 
   async execute(interaction) {
-    const guildId = interaction.guild.id;
-    const userId = interaction.user.id;
+    const guild = interaction.guild;
+    const user = interaction.user;
+    const role = interaction.options.getRole('rôle');
 
     const ownerIds = process.env.OWNER_ID?.split(',') || [];
-    const isOwner = ownerIds.includes(userId);
-
-    if (!isOwner) {
+    if (!ownerIds.includes(user.id)) {
       return interaction.reply({
         content: '⛔ Seuls les propriétaires du projet peuvent utiliser cette commande.',
         flags: 64
       });
     }
 
-    const role = interaction.options.getRole('rôle');
-
     try {
       db.prepare(`
         INSERT INTO server_config (guild_id, role_admin_id)
         VALUES (?, ?)
         ON CONFLICT(guild_id) DO UPDATE SET role_admin_id = excluded.role_admin_id
-      `).run(guildId, role.id);
+      `).run(guild.id, role.id);
 
-      return interaction.reply({
-        content: `✅ Le rôle admin a été défini : <@&${role.id}> (\`${role.name}\`)`,
-        flags: 64
-      });
+      const embed = createConfigEmbed('role_admin_id', role.id, user);
+      await interaction.reply({ embeds: [embed], flags: 64 });
+
+      await sendLogConfigToRubis(
+        interaction.guild,
+        interaction.user,
+        `Le rôle administrateur a été mis à jour : <@&${role.id}> (\`${role.id}\`)`,
+        interaction.client,
+        'Configuration : Rôles / Staff',
+        '🧑‍💼'
+      );
     } catch (error) {
       console.error('[TOPAZE] Erreur DB – /config-role-admin :', error);
       return interaction.reply({

@@ -1,5 +1,7 @@
 const { SlashCommandBuilder, ChannelType } = require('discord.js');
 const db = require('../../../../../shared/utils/db');
+const { createConfigEmbed } = require('../../../../../shared/utils/embed/topaze/embedTopazeConfig');
+const { sendLogConfigToRubis } = require('../../../../../shared/helpers/logger');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -16,6 +18,7 @@ module.exports = {
   async execute(interaction) {
     const guildId = interaction.guild.id;
     const userId = interaction.user.id;
+    const user = interaction.user;
 
     const ownerIds = process.env.OWNER_ID?.split(',') || [];
     const adminIds = process.env.ADMIN_ID?.split(',') || [];
@@ -43,10 +46,17 @@ module.exports = {
         ON CONFLICT(guild_id) DO UPDATE SET channel_birthday_id = excluded.channel_birthday_id
       `).run(guildId, channel.id);
 
-      return interaction.reply({
-        content: `🎂 Salon d’anniversaire mis à jour : <#${channel.id}> (\`${channel.name}\`)`,
-        flags: 64
-      });
+      const embed = createConfigEmbed('channel_birthday_id', channel.id, user);
+      await interaction.reply({ embeds: [embed], flags: 64 });
+
+      await sendLogConfigToRubis(
+        interaction.guild,
+        interaction.user,
+        `Le salon d’anniversaire a été mis à jour : <#${channel.id}> (\`${channel.id}\`)`,
+        interaction.client,
+        'Configuration : Anniversaires',
+        '🎂'
+      );
     } catch (error) {
       console.error('[TOPAZE] Erreur DB – /config-birthday :', error);
       return interaction.reply({

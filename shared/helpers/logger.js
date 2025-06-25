@@ -1,42 +1,42 @@
-const { EmbedBuilder } = require('discord.js');
-const path = require('path');
-const fs = require('fs');
+// shared/helpers/logger.js
+
 require('dotenv').config();
+const io = require('socket.io-client');
+const socket = io('http://localhost:3001');
 
-// Chemin sécurisé vers la base
-const dbPath = path.resolve(__dirname, '../database/saphira.sqlite');
-
-// Vérifie que le dossier parent existe
-fs.mkdirSync(path.dirname(dbPath), { recursive: true });
-
-// === Envoi de log ===
-async function sendLogToRubis(guild, user, description) {
+/**
+ * Envoie un log formaté à Rubis via un événement.
+ * @param {Guild} guild - Objet Guild Discord
+ * @param {User} user - Utilisateur à l’origine de l’action
+ * @param {string} message - Contenu du message de log
+ * @param {Client} client - Client Discord (Topaze)
+ * @param {string} [title] - Titre facultatif du log
+ * @param {string} [icon] - Emoji facultatif (ex: '🔧')
+ */
+async function sendLogConfigToRubis(guild, user, message, client = null, title = 'Modification de configuration', icon = '⚙️') {
   try {
-    const logChannelId = getLogChannelIdForGuild(guild.id);
-    if (!logChannelId) return;
+    if (!client) {
+      return console.warn('[sendLogToRubis] Aucun client Discord fourni.');
+    }
 
-    const embed = new EmbedBuilder()
-      .setTitle('🔧 Configuration Modifiée')
-      .setDescription(description)
-      .setColor(0x3498db)
-      .setTimestamp()
-      .setFooter({ text: `Modifié par ${user.tag}`, iconURL: user.displayAvatarURL() });
-
-    const channel = await guild.channels.fetch(logChannelId);
-    if (!channel) return;
-
-    await channel.send({ embeds: [embed] });
+    const payload = {
+      apiKey: `${process.env.API_KEY_COR}-${process.env.API_KEY_GLB}-${process.env.API_KEY_LOG}`,
+      guildId: guild.id,
+      title,
+      message: `${message}\n**Par :** ${user.tag}`,
+      icon,
+      fromClientId: client.user.id,
+      botAvatar: client.user.displayAvatarURL(),
+      botName: client.user.username
+    };
+    console.log('[Topaze] Émission vers Rubis :', payload);
+    socket.emit('logEventTopaze', payload);
   } catch (err) {
-    console.error('Erreur lors de l’envoi du log à Rubis :', err);
+    console.error('[sendLogConfigToRubis] Erreur lors de la transmission du log à Rubis depuis Topaze :', err);
   }
 }
 
-// === Récupère l'ID du salon de logs depuis la DB ===
-function getLogChannelIdForGuild(guildId) {
-  const db = require('../utils/db');
-
-  const result = db.prepare('SELECT log_channel_id FROM server_config WHERE guild_id = ?').get(guildId);
-  return result?.log_channel_id;
-}
-
-module.exports = { sendLogToRubis };
+module.exports = { 
+  sendLogConfigToRubis,
+  sendLogCalcToRubis
+ };

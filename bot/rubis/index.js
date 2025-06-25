@@ -1,4 +1,6 @@
-require('dotenv').config();
+// bot/rubis/index.js
+
+require('dotenv').config({ path: '../../.env' });
 const { Client, GatewayIntentBits, Partials, Collection } = require('discord.js');
 const path = require('path');
 const fs = require('fs');
@@ -19,7 +21,11 @@ const client = new Client({
 
 client.commands = new Collection();
 
-// === Fonction de chargement récursif des événements ===
+// === Initialisation du logSocket ===
+const { setupLogListener } = require('./logSocketClient');
+setupLogListener(client); // ✅ Appelé une fois que client est défini
+
+// === Chargement des événements ===
 function loadEvents(client, dir = 'events') {
   const files = fs.readdirSync(path.join(__dirname, dir));
 
@@ -28,7 +34,7 @@ function loadEvents(client, dir = 'events') {
     const stat = fs.lstatSync(fullPath);
 
     if (stat.isDirectory()) {
-      loadEvents(client, path.join(dir, file)); // Recurse dans les sous-dossiers
+      loadEvents(client, path.join(dir, file));
     } else if (file.endsWith('.js')) {
       const event = require(fullPath);
       const eventName = event.name || file.split('.')[0];
@@ -44,11 +50,15 @@ function loadEvents(client, dir = 'events') {
   }
 }
 
-// === Connexion et lancement ===
+// === Initialisation complète ===
 client.once('ready', () => {
   console.log(`✅ Rubis connecté en tant que ${client.user.tag}`);
 });
 
-loadEvents(client); // Chargement des événements
+// === Chargement global ===
+loadEvents(client);
 
-client.login(process.env.TK_LOG);
+// === Lancement ===
+client.login(process.env.TK_LOG)
+  .then(() => console.log('🔐 Connexion réussie à l’API Discord (Rubis)'))
+  .catch((err) => console.error('❌ Échec de connexion à Discord :', err));

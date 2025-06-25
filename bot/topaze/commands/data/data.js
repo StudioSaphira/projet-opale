@@ -1,5 +1,6 @@
-const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const db = require('../../../../shared/utils/db');
+const { createDataEmbed } = require('../../../../shared/utils/embed/topaze/embedTopazeData');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -15,57 +16,19 @@ module.exports = {
       if (!row) {
         return interaction.reply({
           content: '⚠️ Aucun paramètre de configuration n’est encore enregistré pour ce serveur.',
-          flags: MessageFlags.Ephemeral
+          flags: 64
         });
       }
 
-      const fields = [
-        {
-          name: '📕 Salon de logs',
-          value: row.log_channel_id ? `<#${row.log_channel_id}> (\`${row.log_channel_id}\`)` : 'Non défini',
-          inline: false
-        },
-        {
-          name: '✨ Salon de bienvenue',
-          value: row.welcome_channel_id ? `<#${row.welcome_channel_id}> (\`${row.welcome_channel_id}\`)` : 'Non défini',
-          inline: false
-        },
-        {
-          name: '✨ Salon de départ',
-          value: row.leaving_channel_id ? `<#${row.leaving_channel_id}> (\`${row.leaving_channel_id}\`)` : 'Non défini',
-          inline: false
-        },
-        {
-          name: '🎂 Salon d’anniversaire',
-          value: row.birthday_channel_id ? `<#${row.birthday_channel_id}> (\`${row.birthday_channel_id}\`)` : 'Non défini',
-          inline: false
-        },
-        {
-          name: '🎫 Catégorie Ticket Support',
-          value: row.ticket_category_id ? `<#${row.ticket_category_id}> (\`${row.ticket_category_id}\`)` : 'Non défini',
-          inline: false
-        },
-        {
-          name: '📩 Catégorie Ticket Contact',
-          value: row.ticket_contact_category_id ? `<#${row.ticket_contact_category_id}> (\`${row.ticket_contact_category_id}\`)` : 'Non défini',
-          inline: false
-        }
-      ];
+      const embed = createDataEmbed(row, interaction.guild);
 
-      const embed = new EmbedBuilder()
-        .setTitle('📊 Paramètres de configuration enregistrés')
-        .setDescription(`Serveur : **${interaction.guild.name}**`)
-        .addFields(fields)
-        .setColor(0x2ecc71)
-        .setFooter({ text: `ID du serveur : ${guildId}` });
-
-      await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+      await interaction.reply({ embeds: [embed], flags: 64 });
 
     } catch (error) {
       console.error('[ERREUR /data]', error);
       await interaction.reply({
         content: '❌ Une erreur est survenue lors de la lecture des données.',
-        flags: MessageFlags.Ephemeral
+        flags: 64
       });
     }
   }

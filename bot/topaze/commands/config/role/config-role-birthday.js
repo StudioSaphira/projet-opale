@@ -1,5 +1,7 @@
 const { SlashCommandBuilder } = require('discord.js');
 const db = require('../../../../../shared/utils/db');
+const { createConfigEmbed } = require('../../../../../shared/utils/embed/topaze/embedTopazeConfig');
+const { sendLogConfigToRubis } = require('../../../../../shared/helpers/logger');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -14,8 +16,11 @@ module.exports = {
   async execute(interaction) {
     const ownerIds = process.env.OWNER_ID?.split(',') || [];
     const adminIds = process.env.ADMIN_ID?.split(',') || [];
-    const guildId = interaction.guild.id;
-    const userId = interaction.user.id;
+
+    const guild = interaction.guild;
+    const user = interaction.user;
+    const guildId = guild.id;
+    const userId = user.id;
 
     const row = db.prepare('SELECT role_admin_id FROM server_config WHERE guild_id = ?').get(guildId);
     const dbRoleId = row?.role_admin_id;
@@ -27,7 +32,7 @@ module.exports = {
     if (!isAllowed) {
       return interaction.reply({
         content: '⛔ Vous n’avez pas l’autorisation d’utiliser cette commande.',
-        ephemeral: true
+        flags: 64
       });
     }
 
@@ -40,15 +45,22 @@ module.exports = {
         ON CONFLICT(guild_id) DO UPDATE SET role_birthday_id = excluded.role_birthday_id
       `).run(guildId, role.id);
 
-      await interaction.reply({
-        content: `🎂 Le rôle d’anniversaire a bien été défini comme <@&${role.id}>.`,
-        ephemeral: true
-      });
+      const embed = createConfigEmbed('role_birthday_id', role.id, user);
+      await interaction.reply({ embeds: [embed], flags: 64 });
+
+      await sendLogConfigToRubis(
+        interaction.guild,
+        interaction.user,
+        `Le rôle anniversaire a été mis à jour : <@&${role.id}> (\`${role.id}\`)`,
+        interaction.client,
+        'Configuration : Rôles / Anniversaires',
+        '🎂'
+      );
     } catch (err) {
       console.error('[ERREUR /config-role-birthday]', err);
       await interaction.reply({
         content: '❌ Une erreur est survenue lors de l’enregistrement.',
-        ephemeral: true
+        flags: 64
       });
     }
   }

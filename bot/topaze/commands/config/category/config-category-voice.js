@@ -1,5 +1,7 @@
 const { SlashCommandBuilder, ChannelType } = require('discord.js');
 const db = require('../../../../../shared/utils/db');
+const { createConfigEmbed } = require('../../../../../shared/utils/embed/topaze/embedTopazeConfig');
+const { sendLogConfigToRubis } = require('../../../../../shared/helpers/logger');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -16,6 +18,7 @@ module.exports = {
   async execute(interaction) {
     const guildId = interaction.guild.id;
     const userId = interaction.user.id;
+    const user = interaction.user;
 
     const ownerIds = process.env.OWNER_ID?.split(',') || [];
     const adminIds = process.env.ADMIN_ID?.split(',') || [];
@@ -43,10 +46,17 @@ module.exports = {
         ON CONFLICT(guild_id) DO UPDATE SET category_voice_id = excluded.category_voice_id
       `).run(guildId, selectedCategory.id);
 
-      return interaction.reply({
-        content: `✅ Catégorie vocale mise à jour : \`${selectedCategory.name}\` (<#${selectedCategory.id}>)`,
-        flags: 64
-      });
+      const embed = createConfigEmbed('category_voice_id', selectedCategory.id, user);
+      await interaction.reply({ embeds: [embed], flags: 64 });
+
+      await sendLogConfigToRubis(
+        interaction.guild,
+        interaction.user,
+        `La catégorie pour les vocaux temporaires a été mise à jour : <#${selectedCategory.id}> (\`${selectedCategory.id}\`)`,
+        interaction.client,
+        'Configuration : Vocaux',
+        '🔊'
+      );
     } catch (error) {
       console.error('[TOPAZE] Erreur DB – /config-category-voice :', error);
       return interaction.reply({

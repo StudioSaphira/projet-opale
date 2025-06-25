@@ -1,5 +1,7 @@
 const { SlashCommandBuilder } = require('discord.js');
 const db = require('../../../../../shared/utils/db');
+const { createConfigEmbed } = require('../../../../../shared/utils/embed/topaze/embedTopazeConfig');
+const { sendLogConfigToRubis } = require('../../../../../shared/helpers/logger');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -13,8 +15,10 @@ module.exports = {
 
   async execute(interaction) {
     const role = interaction.options.getRole('rôle');
-    const guildId = interaction.guild.id;
-    const userId = interaction.user.id;
+    const guild = interaction.guild;
+    const user = interaction.user;
+    const guildId = guild.id;
+    const userId = user.id;
 
     const ownerIds = process.env.OWNER_ID?.split(',') || [];
     const adminIds = process.env.ADMIN_ID?.split(',') || [];
@@ -32,16 +36,30 @@ module.exports = {
       });
     }
 
-    // Mise à jour de la base
-    db.prepare(`
-      INSERT INTO server_config (guild_id, role_boost_id)
-      VALUES (?, ?)
-      ON CONFLICT(guild_id) DO UPDATE SET role_boost_id = excluded.role_boost_id
-    `).run(guildId, role.id);
+    try {
+      db.prepare(`
+        INSERT INTO server_config (guild_id, role_boost_id)
+        VALUES (?, ?)
+        ON CONFLICT(guild_id) DO UPDATE SET role_boost_id = excluded.role_boost_id
+      `).run(guildId, role.id);
 
-    return interaction.reply({
-      content: `✅ Le rôle de boosteur a été mis à jour : ${role}`,
-      flags: 64
-    });
+      const embed = createConfigEmbed('role_boost_id', role.id, user);
+      await interaction.reply({ embeds: [embed], flags: 64 });
+
+      await sendLogConfigToRubis(
+        interaction.guild,
+        interaction.user,
+        `Le rôle boosteur a été mis à jour : <@&${role.id}> (\`${role.id}\`)`,
+        interaction.client,
+        'Configuration : Rôles',
+        '🚀'
+      );
+    } catch (err) {
+      console.error('[ERREUR /config-role-boost]', err);
+      await interaction.reply({
+        content: '❌ Une erreur est survenue lors de l’enregistrement.',
+        flags: 64
+      });
+    }
   }
 };
