@@ -1,3 +1,5 @@
+// bot/topaze/index.js
+
 require('../../shared/database/utils/setupDatabase.js');
 require('dotenv').config({ path: '../../.env' });
 
@@ -62,4 +64,6 @@ client.once('ready', () => {
 });
 
 // === Connexion à Discord ===
-client.login(process.env.TK_COR);
+client.login(process.env.TK_COR)
+  .then(() => console.log('🔐 Connexion réussie à l’API Discord (Topaze)'))
+  .catch((err) => console.error('❌ Échec de connexion à Discord (Topaze) :', err));

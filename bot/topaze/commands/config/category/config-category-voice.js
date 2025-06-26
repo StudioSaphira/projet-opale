@@ -1,3 +1,5 @@
+// bot/topaze/commands/config/category/config-category-voice.js
+
 const { SlashCommandBuilder, ChannelType } = require('discord.js');
 const db = require('../../../../../shared/utils/db');
 const { createConfigEmbed } = require('../../../../../shared/utils/embed/topaze/embedTopazeConfig');
@@ -23,14 +25,13 @@ module.exports = {
     const ownerIds = process.env.OWNER_ID?.split(',') || [];
     const adminIds = process.env.ADMIN_ID?.split(',') || [];
 
-    const isOwner = ownerIds.includes(userId);
-    const isAdminId = adminIds.includes(userId);
+    const row = db.prepare('SELECT role_admin_id, category_voice_id FROM server_config WHERE guild_id = ?').get(guildId);
+    const adminRoleIds = row?.role_admin_id?.split(',').filter(id => id.trim() !== '') || [];
+    const hasAdminRole = adminRoleIds.some(id => member.roles.cache.has(id));
+    const isOwner = ownerIds.includes(user.id);
+    const isAdmin = adminIds.includes(userId);
 
-    const row = db.prepare('SELECT role_admin_id FROM server_config WHERE guild_id = ?').get(guildId);
-    const roleAdminId = row?.role_admin_id;
-    const isAdminRole = roleAdminId && interaction.member.roles.cache.has(roleAdminId);
-
-    if (!isOwner && !isAdminId && !isAdminRole) {
+    if (!isOwner && !isAdmin && !hasAdminRole) {
       return interaction.reply({
         content: '⛔ Vous n’avez pas la permission d’utiliser cette commande.',
         flags: 64
@@ -40,6 +41,14 @@ module.exports = {
     const selectedCategory = interaction.options.getChannel('catégorie');
 
     try {
+      if (previousCategoryId && previousCategoryId !== selectedCategory.id) {
+        db.prepare(`
+          INSERT INTO old_server_config (guild_id, old_category_voice_id)
+          VALUES (?, ?)
+          ON CONFLICT(guild_id) DO UPDATE SET old_category_voice_id = excluded.old_category_voice_id
+        `).run(guildId, previousCategoryId);
+      }
+
       db.prepare(`
         INSERT INTO server_config (guild_id, category_voice_id)
         VALUES (?, ?)
@@ -49,10 +58,14 @@ module.exports = {
       const embed = createConfigEmbed('category_voice_id', selectedCategory.id, user);
       await interaction.reply({ embeds: [embed], flags: 64 });
 
+      const logMessage = previousCategoryId
+        ? `La catégorie pour les vocaux temporaires a été mise à jour : <#${selectedCategory.id}> (\`${selectedCategory.id}\`) → <#${previousCategoryId}> (\`${previousCategoryId}\`)`
+        : `La catégorie pour les vocaux temporaires a été définie : <#${selectedCategory.id}> (\`${selectedCategory.id}\`)`;
+
       await sendLogConfigToRubis(
         interaction.guild,
         interaction.user,
-        `La catégorie pour les vocaux temporaires a été mise à jour : <#${selectedCategory.id}> (\`${selectedCategory.id}\`)`,
+        logMessage,
         interaction.client,
         'Configuration : Vocaux',
         '🔊'

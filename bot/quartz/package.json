@@ -1,6 +1,6 @@
 {
   "name": "quartz",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Bot statistiques et graphiques du Studio Saphira",
   "main": "index.js",
   "scripts": {

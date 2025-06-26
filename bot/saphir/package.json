@@ -1,7 +1,7 @@
 {
   "name": "saphir",
-  "version": "1.0.0",
-  "description": "Bot cosmétique (bienvenue, salons, compteur) du Studio Saphira",
+  "version": "2.0.0",
+  "description": "Le bot de Cosmétique et de Jeux du Studio Saphira™ !",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",

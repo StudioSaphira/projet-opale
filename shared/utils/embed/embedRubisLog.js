@@ -1,3 +1,5 @@
+// shared/utils/embed/embedRubisLog.js
+
 const { EmbedBuilder } = require('discord.js');
 
 /**

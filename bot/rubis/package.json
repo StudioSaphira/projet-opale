@@ -1,7 +1,7 @@
 {
   "name": "rubis",
-  "version": "1.0.0",
-  "description": "Bot de logs du Studio Saphira",
+  "version": "2.0.0",
+  "description": "Le bot de Logs du Studio Saphira™ !",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",

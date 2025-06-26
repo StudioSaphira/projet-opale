@@ -1,3 +1,5 @@
+// bot/topaze/commands/config/role/add-role-mod.js
+
 const { SlashCommandBuilder } = require('discord.js');
 const db = require('../../../../../shared/utils/db');
 const { createConfigEmbed } = require('../../../../../shared/utils/embed/topaze/embedTopazeConfig');
@@ -22,8 +24,10 @@ module.exports = {
     const ownerIds = process.env.OWNER_ID?.split(',') || [];
     const adminIds = process.env.ADMIN_ID?.split(',') || [];
 
+    // Récupère les rôles admin multiples
     const config = db.prepare('SELECT role_admin_id FROM server_config WHERE guild_id = ?').get(guildId);
-    const hasAdminRole = config?.role_admin_id && interaction.member.roles.cache.has(config.role_admin_id);
+    const adminRoleIds = config?.role_admin_id?.split(',').filter(id => id.trim() !== '') || [];
+    const hasAdminRole = adminRoleIds.some(id => interaction.member.roles.cache.has(id));
 
     const isAllowed = ownerIds.includes(userId) || adminIds.includes(userId) || hasAdminRole;
     if (!isAllowed) {
@@ -46,7 +50,7 @@ module.exports = {
       await sendLogConfigToRubis(
         interaction.guild,
         interaction.user,
-        `Le rôle modérateur a été mis à jour : <@&${role.id}> (\`${role.id}\`)`,
+        `Le rôle <@&${role.id}> (\`${role.id}\`) a été ajouté à la liste des rôles 'Modérateur'.`,
         interaction.client,
         'Configuration : Rôles / Staff',
         '🔨'

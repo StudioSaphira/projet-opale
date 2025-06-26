@@ -1,3 +1,5 @@
+// bot/topaze/commands/config/counter/config-role-boost.js
+
 const { SlashCommandBuilder } = require('discord.js');
 const db = require('../../../../../shared/utils/db');
 const { createConfigEmbed } = require('../../../../../shared/utils/embed/topaze/embedTopazeConfig');
@@ -23,9 +25,10 @@ module.exports = {
     const ownerIds = process.env.OWNER_ID?.split(',') || [];
     const adminIds = process.env.ADMIN_ID?.split(',') || [];
 
-    // Vérifie les autorisations
-    const config = db.prepare('SELECT role_admin_id FROM server_config WHERE guild_id = ?').get(guildId);
-    const hasAdminRole = config?.role_admin_id && interaction.member.roles.cache.has(config.role_admin_id);
+    const config = db.prepare('SELECT role_admin_id, role_boost_id FROM server_config WHERE guild_id = ?').get(guildId);
+    const previousRoleId = config?.role_boost_id;
+    const adminRoles = config.role_admin_id?.split(',') || [];
+    const hasAdminRole = adminRoles.some(id => interaction.member.roles.cache.has(id));
     const isOwner = ownerIds.includes(userId);
     const isAdmin = adminIds.includes(userId);
 
@@ -37,6 +40,14 @@ module.exports = {
     }
 
     try {
+      if (previousRoleId && previousRoleId !== role.id) {
+        db.prepare(`
+          INSERT INTO old_server_config (guild_id, old_role_boost_id)
+          VALUES (?, ?)
+          ON CONFLICT(guild_id) DO UPDATE SET old_role_boost_id = excluded.old_role_boost_id
+        `).run(guildId, previousRoleId);
+      }
+
       db.prepare(`
         INSERT INTO server_config (guild_id, role_boost_id)
         VALUES (?, ?)
@@ -46,16 +57,20 @@ module.exports = {
       const embed = createConfigEmbed('role_boost_id', role.id, user);
       await interaction.reply({ embeds: [embed], flags: 64 });
 
+      const logMessage = previousRoleId
+        ? `Le rôle boosteur a été mis à jour : <@&${previousRoleId}> → <@&${role.id}> (\`${role.id}\`)`
+        : `Le rôle boosteur a été défini : <@&${role.id}> (\`${role.id}\`)`;
+
       await sendLogConfigToRubis(
-        interaction.guild,
-        interaction.user,
-        `Le rôle boosteur a été mis à jour : <@&${role.id}> (\`${role.id}\`)`,
+        guild,
+        user,
+        logMessage,
         interaction.client,
         'Configuration : Rôles',
         '🚀'
       );
     } catch (err) {
-      console.error('[ERREUR /config-role-boost]', err);
+      console.error('[TOPAZE] Erreur DB – /config-role-boost :', err);
       await interaction.reply({
         content: '❌ Une erreur est survenue lors de l’enregistrement.',
         flags: 64

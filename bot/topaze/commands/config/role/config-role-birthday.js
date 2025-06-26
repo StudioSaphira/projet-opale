@@ -1,3 +1,5 @@
+// bot/topaze/commands/config/role/config-role-birthday.js
+
 const { SlashCommandBuilder } = require('discord.js');
 const db = require('../../../../../shared/utils/db');
 const { createConfigEmbed } = require('../../../../../shared/utils/embed/topaze/embedTopazeConfig');
@@ -22,8 +24,9 @@ module.exports = {
     const guildId = guild.id;
     const userId = user.id;
 
-    const row = db.prepare('SELECT role_admin_id FROM server_config WHERE guild_id = ?').get(guildId);
+    const row = db.prepare('SELECT role_admin_id, role_birthday_id FROM server_config WHERE guild_id = ?').get(guildId);
     const dbRoleId = row?.role_admin_id;
+    const previousRoleId = row?.role_birthday_id;
 
     const member = interaction.member;
     const hasDbRole = dbRoleId && member.roles.cache.has(dbRoleId);
@@ -39,6 +42,14 @@ module.exports = {
     const role = interaction.options.getRole('rôle');
 
     try {
+      if (previousRoleId && previousRoleId !== role.id) {
+        db.prepare(`
+          INSERT INTO old_server_config (guild_id, old_role_birthday_id)
+          VALUES (?, ?)
+          ON CONFLICT(guild_id) DO UPDATE SET old_role_birthday_id = excluded.old_role_birthday_id
+        `).run(guildId, previousRoleId);
+      }
+
       db.prepare(`
         INSERT INTO server_config (guild_id, role_birthday_id)
         VALUES (?, ?)
@@ -48,16 +59,20 @@ module.exports = {
       const embed = createConfigEmbed('role_birthday_id', role.id, user);
       await interaction.reply({ embeds: [embed], flags: 64 });
 
+      const logMessage = previousRoleId
+        ? `Le rôle anniversaire a été mis à jour : <@&${role.id}> (\`${role.id}\`) → <@&${previousRoleId}> (\`${previousRoleId}\`)`
+        : `Le rôle anniversaire a été défini : <@&${role.id}> (\`${role.id}\`)`;
+
       await sendLogConfigToRubis(
         interaction.guild,
-        interaction.user,
-        `Le rôle anniversaire a été mis à jour : <@&${role.id}> (\`${role.id}\`)`,
+        user,
+        logMessage,
         interaction.client,
         'Configuration : Rôles / Anniversaires',
         '🎂'
       );
     } catch (err) {
-      console.error('[ERREUR /config-role-birthday]', err);
+      console.error('[TOPAZE] Erreur DB – /config-role-birthday :', err);
       await interaction.reply({
         content: '❌ Une erreur est survenue lors de l’enregistrement.',
         flags: 64
