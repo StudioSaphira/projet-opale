@@ -13,6 +13,7 @@
     "dayjs": "^1.11.13",
     "discord.js": "^14.20.0",
     "dotenv": "^16.5.0",
-    "node-cron": "^4.1.0"
+    "node-cron": "^4.1.0",
+    "socket.io-client": "^4.8.1"
   }
 }

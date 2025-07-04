@@ -1,69 +1,83 @@
 // bot/topaze/index.js
 
-require('../../shared/database/utils/setupDatabase.js');
-require('dotenv').config({ path: '../../.env' });
-
-const { Client, GatewayIntentBits, Collection, Partials, InteractionType } = require('discord.js');
+require('dotenv').config();
+const { Client, Collection, GatewayIntentBits } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 
-// === Initialisation du client Discord ===
+// Logger Winston daily-rotate
+const logger = require('../../../shared/helpers/logger');
+
+// DB partagée
+const db = require('../../../shared/utils/db');
+const { sendLogConfigToRubis } = require('../../../shared/helpers/rubisLog');
+
+// Crée le client Discord
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.GuildMembers
-  ],
-  partials: [Partials.Channel]
+  ]
 });
 
-// === Chargement récursif des commandes ===
+// Prépare la collection de commandes
 client.commands = new Collection();
+const commandsPath = path.join(__dirname, 'commands');
 
-function loadCommandsRecursively(dir) {
+// Lecture récursive du dossier de commandes
+function loadCommands(dir) {
   const files = fs.readdirSync(dir);
   for (const file of files) {
     const fullPath = path.join(dir, file);
-    if (fs.statSync(fullPath).isDirectory()) {
-      loadCommandsRecursively(fullPath);
+    if (fs.lstatSync(fullPath).isDirectory()) {
+      loadCommands(fullPath);
     } else if (file.endsWith('.js')) {
       const command = require(fullPath);
       if (command.data && command.execute) {
         client.commands.set(command.data.name, command);
+        logger.log(`[Topaze] Commande chargée : ${command.data.name}`);
       }
     }
   }
 }
+loadCommands(commandsPath);
 
-loadCommandsRecursively(path.join(__dirname, 'commands'));
+// Prêt
+client.once('ready', () => {
+  logger.log(`[Topaze] Connecté en tant que ${client.user.tag}`);
+});
 
-// === Gestion directe des interactions ===
-client.on('interactionCreate', async interaction => {
-  if (interaction.type !== InteractionType.ApplicationCommand) return;
+// Gère les interactions
+client.on('interactionCreate', async (interaction) => {
+  if (!interaction.isChatInputCommand()) return;
 
   const command = client.commands.get(interaction.commandName);
   if (!command) return;
 
   try {
-    await command.execute(interaction, client);
-  } catch (err) {
-    console.error(`[Topaze] Erreur dans la commande /${interaction.commandName} :`, err);
+    await command.execute(interaction);
+  } catch (error) {
+    logger.error(`[Topaze] Erreur lors de l’exécution de ${interaction.commandName} : ${error.stack}`);
 
-    if (!interaction.replied) {
-      await interaction.reply({
-        content: '❌ Une erreur est survenue lors de l’exécution de la commande.',
-        flags: 64
-      });
-    }
+    await interaction.reply({
+      content: '❌ Une erreur est survenue lors de l’exécution de la commande.',
+      flags: 64
+    });
+
+    // Log optionnel vers Rubis
+    await sendLogConfigToRubis(
+      interaction.guild,
+      interaction.user,
+      `Erreur lors de \`${interaction.commandName}\` : ${error.message}`,
+      client,
+      'Erreur Commande',
+      '⚠️'
+    );
   }
 });
 
-// === Prêt ===
-client.once('ready', () => {
-  console.log(`✅ Topaze prêt : connecté en tant que ${client.user.tag}`);
-});
-
-// === Connexion à Discord ===
+// Connexion
 client.login(process.env.TK_COR)
-  .then(() => console.log('🔐 Connexion réussie à l’API Discord (Topaze)'))
-  .catch((err) => console.error('❌ Échec de connexion à Discord (Topaze) :', err));
+  .then(() => logger.log('[Topaze] Connexion Discord réussie.'))
+  .catch(err => logger.error(`[Topaze] Échec de connexion : ${err.message}`));

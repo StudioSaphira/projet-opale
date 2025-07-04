@@ -1,61 +1,56 @@
 // bot/topaze/registerCommands.js
 
-require('dotenv').config({ path: '../../.env' });
-
+require('dotenv').config();
 const { REST, Routes } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 
-const clientId = process.env.ID_COR;
-const guildId = process.env.GUILD_ID;
-const token = process.env.TK_COR;
+// Variables d'env
+const TOKEN = process.env.TK_COR;
+const CLIENT_ID = process.env.ID_COR;
 
-if (!token || !clientId || !guildId) {
-  console.error('❌ Token ou ID manquant dans le .env');
+if (!TOKEN || !CLIENT_ID) {
+  console.error('[Topaze] ❌ Variables d’environnement manquantes : TK_COR ou ID_COR.');
   process.exit(1);
 }
 
-// Fonction récursive pour charger toutes les commandes
-function loadCommandsRecursively(dir) {
-  const commands = [];
+// Prépare REST API
+const rest = new REST({ version: '10' }).setToken(TOKEN);
 
+// Lecture récursive des commands
+const commands = [];
+const commandsPath = path.join(__dirname, 'commands');
+
+function loadCommands(dir) {
   const files = fs.readdirSync(dir);
   for (const file of files) {
     const fullPath = path.join(dir, file);
-    const stat = fs.statSync(fullPath);
-
-    if (stat.isDirectory()) {
-      commands.push(...loadCommandsRecursively(fullPath));
+    if (fs.lstatSync(fullPath).isDirectory()) {
+      loadCommands(fullPath);
     } else if (file.endsWith('.js')) {
       const command = require(fullPath);
-      if ('data' in command && 'execute' in command) {
+      if (command.data) {
         commands.push(command.data.toJSON());
-      } else {
-        console.warn(`⚠️ La commande dans ${file} est invalide.`);
+        console.log(`[Topaze] Commande prête à enregistrer : ${command.data.name}`);
       }
     }
   }
-
-  return commands;
 }
 
-const commandsPath = path.join(__dirname, 'commands');
-const commands = loadCommandsRecursively(commandsPath);
+loadCommands(commandsPath);
 
-// Déploiement via REST
-const rest = new REST({ version: '10' }).setToken(token);
-
+// Déploie globalement
 (async () => {
   try {
-    console.log('🔁 Déploiement des commandes slash de Topaze en cours...');
+    console.log(`[Topaze] Déploiement de ${commands.length} commande(s) pour le client ${CLIENT_ID}...`);
 
     await rest.put(
-      Routes.applicationGuildCommands(clientId, guildId),
+      Routes.applicationCommands(CLIENT_ID),
       { body: commands }
     );
 
-    console.log('✅ Commandes déployées avec succès !');
+    console.log('[Topaze] ✅ Toutes les commandes ont été enregistrées globalement !');
   } catch (error) {
-    console.error('❌ Échec du déploiement des commandes :', error);
+    console.error('[Topaze] ❌ Erreur lors de l’enregistrement des commandes :', error);
   }
 })();

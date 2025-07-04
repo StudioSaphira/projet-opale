@@ -1,7 +1,7 @@
 // bot/rubis/logSocketClient.js
 
 const io = require('socket.io-client');
-const socket = io(`http://${process.env.IP_ADRESS}:${process.env.SOCKET_PORT}`);
+const socket = io(`http://${process.env.SOCKET_ADRESS}:${process.env.SOCKET_PORT}`);
 
 function setupLogListener(client) {
   socket.on('connect', () => {
