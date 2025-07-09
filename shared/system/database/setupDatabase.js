@@ -6,62 +6,116 @@ const Database = require('better-sqlite3');
 const dbPath = path.resolve(__dirname, './saphira.sqlite');
 const db = new Database(dbPath);
 
+// ========== CHANNELS LOG ==========
 db.prepare(`
-  CREATE TABLE IF NOT EXISTS server_config (
+  CREATE TABLE IF NOT EXISTS channel_log (
     guild_id TEXT PRIMARY KEY,
-    channel_log_id TEXT,
-    channel_welcome_id TEXT,
-    channel_leaving_id TEXT,
-    channel_birthday_id TEXT,
-    channel_voice_id TEXT,
-    channel_counter_member_id TEXT,
-    channel_counter_bot_id TEXT,
-    channel_counter_staff_id TEXT,
-    channel_counter_boost_id TEXT,
-    channel_counter_allmember_id TEXT,
-    category_counter_id TEXT,
-    category_support_id TEXT,
-    category_contact_id TEXT,
-    category_voice_id TEXT,
-    role_allstaff_id TEXT,
-    role_mod_id TEXT,
-    role_admin_id TEXT,
-    role_boost_id TEXT,
-    role_birthday_id TEXT,
-    role_member_id TEXT
+    channel_id TEXT,
+    old_channel_id TEXT
   );
 `).run();
+console.log("✅ Table 'channel_log' initialisée.");
+console.log("");
 
-console.log("✅ Table 'server_config' initialisée.");
-
+// ========== CHANNELS WELCOME ==========
 db.prepare(`
-  CREATE TABLE IF NOT EXISTS old_server_config (
+  CREATE TABLE IF NOT EXISTS channel_welcome (
     guild_id TEXT PRIMARY KEY,
-    old_channel_log_id TEXT,
-    old_channel_welcome_id TEXT,
-    old_channel_leaving_id TEXT,
-    old_channel_birthday_id TEXT,
-    old_channel_voice_id TEXT,
-    old_channel_counter_member_id TEXT,
-    old_channel_counter_bot_id TEXT,
-    old_channel_counter_staff_id TEXT,
-    old_channel_counter_boost_id TEXT,
-    old_channel_counter_allmember_id TEXT,
-    old_category_counter_id TEXT,
-    old_category_support_id TEXT,
-    old_category_contact_id TEXT,
-    old_category_voice_id TEXT,
-    old_role_allstaff_id TEXT,
-    old_role_mod_id TEXT,
-    old_role_admin_id TEXT,
-    old_role_boost_id TEXT,
-    old_role_birthday_id TEXT,
-    old_role_member_id TEXT
+    channel_id TEXT,
+    old_channel_id TEXT
   );
 `).run();
+console.log("✅ Table 'channel_welcome' initialisée.");
+console.log("");
 
-console.log("✅ Table 'old_server_config' initialisée.");
+// ========== CHANNELS LEAVING ==========
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS channel_leaving (
+    guild_id TEXT PRIMARY KEY,
+    channel_id TEXT,
+    old_channel_id TEXT
+  );
+`).run();
+console.log("✅ Table 'channel_leaving' initialisée.");
+console.log("");
 
+// ========== CHANNELS BIRTHDAY ==========
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS channel_birthday (
+    guild_id TEXT PRIMARY KEY,
+    channel_id TEXT,
+    old_channel_id TEXT
+  );
+`).run();
+console.log("✅ Table 'channel_birthday' initialisée.");
+console.log("");
+
+// ========== CHANNELS VOICE ==========
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS channel_voice (
+    guild_id TEXT PRIMARY KEY,
+    channel_id TEXT,
+    old_channel_id TEXT
+  );
+`).run();
+console.log("✅ Table 'channel_voice' initialisée.");
+console.log("");
+
+// ========== COUNTERS ==========
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS channel_counter (
+    guild_id TEXT PRIMARY KEY,
+    member_id TEXT,
+    old_member_id TEXT,
+    bot_id TEXT,
+    old_bot_id TEXT,
+    staff_id TEXT,
+    old_staff_id TEXT,
+    boost_id TEXT,
+    old_boost_id TEXT,
+    allmember_id TEXT,
+    old_allmember_id TEXT
+  );
+`).run();
+console.log("✅ Table 'channel_counter' initialisée.");
+console.log("");
+
+// ========== CATEGORIES ==========
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS category (
+    guild_id TEXT PRIMARY KEY,
+    counter_id TEXT,
+    old_counter_id TEXT,
+    support_id TEXT,
+    old_support_id TEXT,
+    contact_id TEXT,
+    old_contact_id TEXT,
+    voice_id TEXT,
+    old_voice_id TEXT
+  );
+`).run();
+console.log("✅ Table 'category' initialisée.");
+console.log("");
+
+// ========== ROLES ==========
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS role (
+    guild_id TEXT PRIMARY KEY,
+    allstaff_id TEXT,
+    mod_id TEXT,
+    admin_id TEXT,
+    boost_id TEXT,
+    old_boost_id TEXT,
+    birthday_id TEXT,
+    old_birthday_id TEXT,
+    member_id TEXT,
+    old_member_id TEXT
+  );
+`).run();
+console.log("✅ Table 'role' initialisée.");
+console.log("");
+
+// ========== BIRTHDAY (Utilisateurs) ==========
 db.prepare(`
   CREATE TABLE IF NOT EXISTS birthday (
     user_id TEXT PRIMARY KEY,
@@ -69,9 +123,10 @@ db.prepare(`
     hour TEXT
   );
 `).run();
-
 console.log("✅ Table 'birthday' initialisée.");
+console.log("");
 
+// ========== HISTORIQUE TICKET ==========
 db.prepare(`
   CREATE TABLE IF NOT EXISTS historique_ticket (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -82,9 +137,10 @@ db.prepare(`
     UNIQUE(user_id, guild_id, type, timestamp)
   );
 `).run();
-
 console.log("✅ Table 'historique_ticket' initialisée.");
+console.log("");
 
+// ========== COUNTER (Global résumé ?) ==========
 db.prepare(`
   CREATE TABLE IF NOT EXISTS counter (
     guild_id TEXT PRIMARY KEY,
@@ -95,8 +151,36 @@ db.prepare(`
     "boost" TEXT
   );
 `).run();
-
 console.log("✅ Table 'counter' initialisée.");
 console.log("");
-console.log("✅ Toutes les tables ont initialisées !");
+
+// ========== USER XP (Turquoise) ==========
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS user_xp (
+    guild_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    xp INTEGER DEFAULT 0,
+    PRIMARY KEY (guild_id, user_id)
+  );
+`).run();
+console.log("✅ Table 'user_xp' (Turquoise) initialisée.");
+console.log("");
+
+// ========== USER RP PROFILE (Turquoise) ==========
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS user_rp_profile (
+    profile_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL,
+    prefix TEXT NOT NULL,
+    name TEXT NOT NULL,
+    avatar_url TEXT,
+    description TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (user_id, prefix)
+  );
+`).run();
+console.log("✅ Table 'user_rp_profile' (Turquoise) initialisée.");
+console.log("");
+
+console.log("✅ Toutes les tables ont été initialisées !");
 console.log("");

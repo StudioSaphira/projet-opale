@@ -1,3 +1,5 @@
+// shared/utils/embed/topaze/config.js
+
 const { EmbedBuilder } = require('discord.js');
 
 const fieldLabels = {
@@ -15,21 +17,31 @@ const fieldLabels = {
   category_support_id: '🎫 Catégorie Tickets - Support',
   category_contact_id: '📩 Catégorie Tickets - Contact',
   category_counter_id: '🔢 Catégorie Compteurs',
-  role_admin_id: '👑 Rôle Admin',
-  role_allstaff_id: '🛡️ Rôle Staff',
-  role_mod_id: '🔨 Rôle Modérateur',
   role_boost_id: '🎉 Rôle Booster',
   role_birthday_id: '🎂 Rôle Anniversaire',
   role_member_id: '👤 Rôle Membre'
 };
 
-function createConfigEmbed(columnName, newValueId, user) {
+/**
+ * Crée un embed de confirmation de modification de config.
+ * @param {string} columnName - Nom du champ modifié (ex : channel_log_id)
+ * @param {string} newValueId - Nouvelle valeur
+ * @param {string|null} oldValueId - Ancienne valeur (peut être null)
+ * @param {User} user - L'utilisateur Discord
+ */
+function createConfigEmbed(columnName, newValueId, oldValueId, user) {
   const label = fieldLabels[columnName] || columnName;
-  const formattedValue = formatIdByType(columnName, newValueId);
+
+  const formattedNew = formatIdByType(columnName, newValueId);
+  const formattedOld = formatIdByType(columnName, oldValueId);
+
+  const description = oldValueId
+    ? `Ancienne valeur : ${formattedOld}\nNouvelle valeur : ${formattedNew}`
+    : `Vous avez modifié **${label}** par ${formattedNew}`;
 
   return new EmbedBuilder()
-    .setTitle('✅ Configuration mise à jour')
-    .setDescription(`Vous avez modifié **${label}** par ${formattedValue}`)
+    .setTitle(`✅ Modification : ${label}`)
+    .setDescription(description)
     .setColor(0x1aa9c9)
     .setTimestamp()
     .setFooter({ text: `Modifié par ${user.tag}`, iconURL: user.displayAvatarURL() });
