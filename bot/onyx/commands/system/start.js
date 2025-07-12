@@ -1,1 +1,0 @@
-// bot/onyx/commands/system/start.js

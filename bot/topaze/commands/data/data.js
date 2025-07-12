@@ -1,9 +1,9 @@
 // bot/topaze/commands/data/data.js
 
 const { SlashCommandBuilder } = require('discord.js');
-const db = require('../../../../../shared/utils/db');
-const logger = require('../../../../../shared/helpers/logger');
-const { createDataEmbed } = require('../../../../../shared/utils/embed/topaze/dataEmbed');
+const db = require('../../../../shared/utils/db');
+const logger = require('../../../../shared/helpers/logger');
+const { createDataEmbed } = require('../../../../shared/utils/embed/topaze/data');
 
 module.exports = {
   data: new SlashCommandBuilder()

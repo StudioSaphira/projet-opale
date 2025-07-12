@@ -1,18 +1,19 @@
 // bot/topaze/index.js
 
 require('dotenv').config({ path: '../../.env' });
+
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 
-// Logger Winston daily-rotate
-const logger = require('../../../shared/helpers/logger');
+// Logger
+const logger = require('../../shared/helpers/logger');
 
-// DB partagée
-const db = require('../../../shared/utils/db');
-const { sendLogConfigToRubis } = require('../../../shared/helpers/rubisLog');
+// DB
+const db = require('../../shared/utils/db');
+const { sendLogConfigToRubis } = require('../../shared/helpers/rubisLog');
 
-// Crée le client Discord
+// Client Discord
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -21,34 +22,34 @@ const client = new Client({
   ]
 });
 
-// Prépare la collection de commandes
+// Collection des commandes
 client.commands = new Collection();
 const commandsPath = path.join(__dirname, 'commands');
 
-// Lecture récursive du dossier de commandes
-function loadCommands(dir) {
-  const files = fs.readdirSync(dir);
-  for (const file of files) {
-    const fullPath = path.join(dir, file);
-    if (fs.lstatSync(fullPath).isDirectory()) {
-      loadCommands(fullPath);
-    } else if (file.endsWith('.js')) {
-      const command = require(fullPath);
-      if (command.data && command.execute) {
+// Charger toutes les commandes
+fs.readdirSync(commandsPath).forEach(folder => {
+  const folderPath = path.join(commandsPath, folder);
+  if (fs.lstatSync(folderPath).isDirectory()) {
+    const commandFiles = fs.readdirSync(folderPath).filter(file => file.endsWith('.js'));
+    for (const file of commandFiles) {
+      const filePath = path.join(folderPath, file);
+      const command = require(filePath);
+      if ('data' in command && 'execute' in command) {
         client.commands.set(command.data.name, command);
         logger.log(`[Topaze] Commande chargée : ${command.data.name}`);
+      } else {
+        logger.warn(`[Topaze] Commande invalide ignorée : ${file}`);
       }
     }
   }
-}
-loadCommands(commandsPath);
+});
 
-// Prêt
+// Bot prêt
 client.once('ready', () => {
   logger.log(`[Topaze] Connecté en tant que ${client.user.tag}`);
 });
 
-// Gère les interactions
+// Gestion des interactions
 client.on('interactionCreate', async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
 
@@ -56,20 +57,26 @@ client.on('interactionCreate', async (interaction) => {
   if (!command) return;
 
   try {
-    await command.execute(interaction);
+    await command.execute(interaction, client);
   } catch (error) {
-    logger.error(`[Topaze] Erreur lors de l’exécution de ${interaction.commandName} : ${error.stack}`);
+    logger.error(`[Topaze] Erreur lors de ${interaction.commandName} : ${error.stack}`);
 
-    await interaction.reply({
-      content: '❌ Une erreur est survenue lors de l’exécution de la commande.',
-      flags: 64
-    });
+    if (interaction.deferred || interaction.replied) {
+      await interaction.followUp({
+        content: '❌ Une erreur est survenue.',
+        flags: 64
+      });
+    } else {
+      await interaction.reply({
+        content: '❌ Une erreur est survenue.',
+        flags: 64
+      });
+    }
 
-    // Log optionnel vers Rubis
     await sendLogConfigToRubis(
       interaction.guild,
       interaction.user,
-      `Erreur lors de \`${interaction.commandName}\` : ${error.message}`,
+      `Erreur \`${interaction.commandName}\` : ${error.message}`,
       client,
       'Erreur Commande',
       '⚠️'

@@ -1,59 +1,72 @@
 // bot/rubis/commands/log-test.js
 
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 
-const eventList = [
+// Liste des événements dispo à tester
+const EVENT_LIST = [
   // Channels
   'channelCreate', 'channelDelete', 'channelUpdate',
   // Members
   'guildMemberAdd', 'guildMemberRemove',
-  'memberInfraction', 'memberRoleAdded', 'memberRoleRemoved',
-  'memberSanction', 'memberWarned',
+  'memberRoleAdded', 'memberRoleRemoved',
+  'memberInfraction', 'memberSanction', 'memberWarned',
   // Messages
-  'bulkMessageDelete', 'messageDelete', 'messageUpdate',
+  'messageDelete', 'messageUpdate', 'bulkMessageDelete',
   // Roles
   'roleCreate', 'roleDelete', 'roleUpdate',
   // System
-  'customLogReceiver', 'guildBoosted',
+  'customLogReceiver', 'guildBoosted'
 ];
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('log-test')
-    .setDescription('Déclenche manuellement un événement pour tester les logs Rubis.')
+    .setDescription('Déclenche manuellement un événement pour tester son log Rubis.')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addStringOption(option =>
-      option.setName('event')
-        .setDescription('Événement à tester')
+      option
+        .setName('event')
+        .setDescription('Nom de l’événement à déclencher')
         .setRequired(true)
         .setAutocomplete(true)
     ),
 
+  // === Autocomplétion dynamique ===
   async autocomplete(interaction) {
     const focused = interaction.options.getFocused();
-    const filtered = eventList.filter(e => e.toLowerCase().includes(focused.toLowerCase()));
+    const filtered = EVENT_LIST.filter(e =>
+      e.toLowerCase().includes(focused.toLowerCase())
+    );
+
     await interaction.respond(
       filtered.map(e => ({ name: e, value: e }))
     );
   },
 
+  // === Exécution ===
   async execute(interaction) {
     const eventName = interaction.options.getString('event');
 
-    if (!eventList.includes(eventName)) {
-      return interaction.reply({ content: `❌ L’événement \`${eventName}\` n’est pas reconnu.`, flags: 64 });
+    if (!EVENT_LIST.includes(eventName)) {
+      return interaction.reply({
+        content: `❌ L’événement \`${eventName}\` est inconnu.`,
+        ephemeral: true
+      });
     }
 
-    // Simule l’appel de l’événement pour test
+    // Émission manuelle de l’événement
     interaction.client.emit(eventName, {
       simulated: true,
       user: interaction.user,
-      channel: interaction.channel,
       guild: interaction.guild,
-    });
+      channel: interaction.channel
+    }, interaction.client);
 
     await interaction.reply({
       content: `✅ Événement \`${eventName}\` déclenché pour test.`,
-      flags: 64,
+      ephemeral: true
     });
-  },
+
+    console.log(`🧪 Test : événement ${eventName} émis manuellement.`);
+  }
 };

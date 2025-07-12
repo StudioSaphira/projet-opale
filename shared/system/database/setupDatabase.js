@@ -50,6 +50,17 @@ db.prepare(`
 console.log("✅ Table 'channel_birthday' initialisée.");
 console.log("");
 
+// ========== CHANNELS RULES ==========
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS channel_rules (
+    guild_id TEXT PRIMARY KEY,
+    channel_id TEXT,
+    old_channel_id TEXT
+  );
+`).run();
+console.log("✅ Table 'channel_rules' initialisée.");
+console.log("");
+
 // ========== CHANNELS VOICE ==========
 db.prepare(`
   CREATE TABLE IF NOT EXISTS channel_voice (
@@ -164,6 +175,19 @@ db.prepare(`
   );
 `).run();
 console.log("✅ Table 'user_xp' (Turquoise) initialisée.");
+console.log("");
+
+// ========== USER INVITE (Saphir) ==========
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS user_invite (
+    guild_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    invited_by TEXT,
+    invite_users INTEGER DEFAULT 0,
+    PRIMARY KEY (guild_id, user_id)
+  );
+`).run();
+console.log("✅ Table 'user_invite' (Saphir) initialisée.");
 console.log("");
 
 // ========== USER RP PROFILE (Turquoise) ==========

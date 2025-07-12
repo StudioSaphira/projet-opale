@@ -1,6 +1,7 @@
 // bot/topaze/registerCommands.js
 
-require('dotenv').config();
+require('dotenv').config({ path: '../../.env' });
+
 const { REST, Routes } = require('discord.js');
 const fs = require('fs');
 const path = require('path');

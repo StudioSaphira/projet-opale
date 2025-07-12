@@ -1,12 +1,13 @@
 # === FICHIERS SENSIBLES ===
-.env
+.env 
 bot/README.md
+**.md
 
 # === MODULES NODE.JS ===
 **/node_modules/
 
 # === BASE DE DONNÉES ===
-shared/database/
+shared/system/
 
 # === SCRIPTS LOCAUX À NE PAS TRACKER ===
 start-all.sh

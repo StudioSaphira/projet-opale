@@ -1,6 +1,6 @@
 {
   "name": "projet-opale",
-  "version": "2.0.1",
+  "version": "/",
   "description": "Projet de développement de bot pour le Studio Saphira.",
   "dependencies": {
     "better-sqlite3": "^11.10.0",
