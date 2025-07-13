@@ -1,6 +1,6 @@
 {
   "name": "rubis",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Le bot de Logs du Studio Saphira™ !",
   "main": "index.js",
   "scripts": {

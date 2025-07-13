@@ -58,5 +58,5 @@ client.once(Events.ClientReady, () => {
 });
 
 client.login(process.env.TK_SSB)
-  .then(() => console.log('🔐 Connexion réussie à Discord (Rubis)'))
+  .then(() => console.log('🔐 Connexion réussie à Discord (Onyx)'))
   .catch(err => console.error('❌ Échec de connexion à Discord :', err));
