@@ -1,6 +1,3 @@
-V2.2.0 : 
-Ajout d'une commande config pour un salon règlement
-
 V2.3.0 :
 Mise à jour des commandes -> Ajout de vérification (commande éxecutable uniquement si le bot affilié est présent sur le serveur)
 

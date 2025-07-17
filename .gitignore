@@ -1,6 +1,7 @@
 # === FICHIERS SENSIBLES ===
 .env 
 bot/README.md
+README.md
 **.md
 
 # === MODULES NODE.JS ===
