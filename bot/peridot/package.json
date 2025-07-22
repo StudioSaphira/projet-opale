@@ -1,6 +1,6 @@
 {
   "name": "peridot",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Bot de gestion des tâches automatiques du Studio Saphira",
   "main": "index.js",
   "scripts": {
@@ -9,9 +9,12 @@
   },
   "dependencies": {
     "better-sqlite3": "^12.1.1",
+    "cheerio": "^1.1.2",
     "cron": "^4.3.1",
     "discord.js": "^14.21.0",
     "dotenv": "^16.5.0",
+    "node-fetch": "^3.3.2",
+    "rss-parser": "^3.13.0",
     "socket.io-client": "^4.8.1"
   }
 }

@@ -206,5 +206,85 @@ db.prepare(`
 console.log("✅ Table 'user_rp_profile' (Turquoise) initialisée.");
 console.log("");
 
+// ========== AUTOMATISATION (Péridot) ==========
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS automatisation_peridot (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL,                     -- ID du membre Discord
+    guild_id TEXT NOT NULL,                    -- ID du serveur Discord
+    username TEXT NOT NULL,                    -- Nom visible du créateur/streamer
+    avatar_url TEXT,                           -- Avatar ou logo du profil
+    description TEXT,                          -- Description optionnelle du profil
+    
+    instagram_url TEXT,                        -- Lien Instagram (https://...)
+    tiktok_url TEXT,                           -- Lien TikTok (https://...)
+    twitter_url TEXT,                          -- Lien Twitter/X (https://...)
+    youtube_url TEXT,                          -- Lien chaîne YouTube (https://...)
+    twitch_url TEXT,                           -- Lien Twitch (https://...)
+
+    is_active INTEGER DEFAULT 1,               -- Si l’automatisation est activée (1 = oui, 0 = non)
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP  -- Date de création du profil automatisé
+  );
+`).run();
+console.log("✅ Table 'automatisation' (Péridot) initialisée.");
+console.log("");
+
+// ========== Tâches Planifiées (Péridot) ==========
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS tâches_planifiées (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL,
+    channel_id TEXT NOT NULL,
+    contenu TEXT NOT NULL,
+    horaire TEXT NOT NULL, -- Format HH:MM (heure 24h, ex: 18:30)
+    is_active INTEGER DEFAULT 1,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  );
+`).run();
+console.log("✅ Table 'tâches_planifiées' (Péridot) initialisée.");
+console.log("");
+
+// ========== Annonces (Péridot) ==========
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS annonces_envoyées (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    profile_id INTEGER,
+    platform TEXT NOT NULL,
+    post_id TEXT NOT NULL,
+    sent_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(profile_id, platform, post_id)
+  );
+`).run();
+console.log("✅ Table 'annonces_envoyées' (Péridot) initialisée.");
+console.log("");
+
+// ========== Flux RSS (Péridot) ==========
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS flux_rss_peridot (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL,
+    url TEXT NOT NULL,
+    name TEXT,
+    last_guid TEXT, -- ID du dernier élément traité
+    salon_id TEXT NOT NULL,
+    is_active INTEGER DEFAULT 1,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(url, salon_id)
+  );
+`).run();
+console.log("✅ Table 'flux_rss_peridot' (Péridot) initialisée.");
+console.log("");
+
+// ========== CHANNELS COMMUNICATION (Péridot) ==========
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS channel_communication (
+    guild_id TEXT PRIMARY KEY,
+    channel_id TEXT,
+    old_channel_id TEXT
+  );
+`).run();
+console.log("✅ Table 'channel_communication' (Péridot) initialisée.");
+console.log("");
+
 console.log("✅ Toutes les tables ont été initialisées !");
 console.log("");

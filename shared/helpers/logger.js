@@ -6,15 +6,15 @@ const path = require('path');
 
 // Format timestamp lisible
 const logFormat = format.printf(({ timestamp, level, message }) => {
-  return `[${timestamp}] [${level.toUpperCase()}] ${message}`;
+  return `[${timestamp}] [${level.toUpperCase()}] [Topaze] ${message}`;
 });
 
 // Transport fichier avec rotation quotidienne
 const dailyRotateTransport = new transports.DailyRotateFile({
   filename: path.join(__dirname, '../../../logs/topaze-%DATE%.log'),
   datePattern: 'DD-MM-YYYY',
-  zippedArchive: true,         // Si true, zippe les vieux logs
-  maxFiles: '7d',              // Conserve 7 jours
+  zippedArchive: true,
+  maxFiles: '7d',
   level: 'info'
 });
 
@@ -37,7 +37,9 @@ const logger = createLogger({
   ]
 });
 
+// Export
 module.exports = {
   log: (message) => logger.info(message),
-  error: (message) => logger.error(message)
+  error: (message) => logger.error(message),
+  warn: (message) => logger.warn(message)
 };

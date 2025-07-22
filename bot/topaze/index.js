@@ -14,49 +14,15 @@ const client = new Client({ intents: [ GatewayIntentBits.Guilds, GatewayIntentBi
 
 client.commands = new Collection();
 
-// Chargement des commandes depuis /commands/*
-const commandsPath = path.join(__dirname, 'commands');
-const commandFolders = fs.readdirSync(commandsPath).filter(folder => {
-  const folderPath = path.join(commandsPath, folder);
-  return fs.lstatSync(folderPath).isDirectory();
-});
+// Chargement des commandes
+client.commands = new Collection();
+const commandsPath = __dirname + '/commands';
+const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
 
-for (const folder of commandFolders) {
-  const folderPath = path.join(commandsPath, folder);
-  const commandFiles = fs.readdirSync(folderPath).filter(file => file.endsWith('.js'));
-
-  for (const file of commandFiles) {
-    const filePath = path.join(folderPath, file);
-    try {
-      const command = require(filePath);
-
-      if (!command || !command.data || !command.execute) {
-        logger.warn(`[Topaze] Fichier ignoré (incomplet) : ${file}`);
-        continue;
-      }
-
-      if (!command.data.name || typeof command.execute !== 'function') {
-        logger.warn(`[Topaze] Fichier ignoré (structure invalide) : ${file}`);
-        continue;
-      }
-
-      if (client.commands.has(command.data.name)) {
-        logger.warn(`[Topaze] Conflit : la commande '${command.data.name}' est déjà définie. Fichier ignoré : ${file}`);
-        continue;
-      }
-
-      client.commands.set(command.data.name, command);
-      logger.log(`[Topaze] ✅ Commande chargée : ${command.data.name}`);
-    } catch (error) {
-      logger.error(`[Topaze] ❌ Erreur lors du chargement de ${file} : ${error.message}`);
-    }
-  }
+for (const file of commandFiles) {
+  const command = require(`${commandsPath}/${file}`);
+  client.commands.set(command.data.name, command);
 }
-
-// Quand le bot est prêt
-client.once('ready', () => {
-  logger.log(`[Topaze] 🤖 Connecté en tant que ${client.user.tag}`);
-});
 
 // Gestion des interactions
 client.on('interactionCreate', async (interaction) => {
@@ -96,7 +62,12 @@ client.on('interactionCreate', async (interaction) => {
   }
 });
 
+// Quand le bot est prêt
+client.once('ready', () => {
+  logger.log(`🤖 Connecté en tant que ${client.user.tag}`);
+});
+
 // Connexion à Discord
 client.login(process.env.TK_COR)
-  .then(() => logger.log('[Topaze] ✅ Connexion Discord réussie.'))
-  .catch(err => logger.error(`[Topaze] ❌ Échec de connexion : ${err.message}`));
+  .then(() => logger.log('✅ Connexion Discord réussie.'))
+  .catch(err => logger.error(`❌ Échec de connexion : ${err.message}`));
